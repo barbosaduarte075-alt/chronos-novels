@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chronos Webnovels</title>
+<style>
+    :root {
+        --bg: #09090b; --surface: #18181b; --surface-hover: #27272a;
+        --primary: #e11d48; --primary-hover: #be123c;
+        --text: #f4f4f5; --text-muted: #a1a1aa; --border: #3f3f46;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+    
+    /* Header & Login */
+    header { background: var(--surface); padding: 15px 30px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
+    .logo { font-size: 22px; font-weight: 900; color: var(--primary); cursor: pointer; letter-spacing: 1px; text-transform: uppercase; }
+    .auth-area { display: flex; align-items: center; gap: 15px; }
+    .btn { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+    .btn:hover { background: var(--primary-hover); }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+    .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+    
+    /* Telas */
+    main { padding: 30px; flex: 1; max-width: 1200px; margin: 0 auto; width: 100%; position: relative; }
+    .view { display: none; animation: fadeIn 0.3s; }
+    .view.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Estado Vazio & Grid */
+    .empty-state { text-align: center; padding: 80px 20px; color: var(--text-muted); }
+    .empty-state h2 { color: var(--text); margin-bottom: 10px; font-size: 28px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; cursor: pointer; transition: 0.2s; }
+    .card:hover { transform: translateY(-5px); border-color: var(--primary); box-shadow: 0 10px 20px rgba(225, 29, 72, 0.2); }
+    .card-img { height: 200px; background: #27272a; display: flex; align-items: center; justify-content: center; font-size: 40px; color: #3f3f46; position: relative; }
+    .card-img img { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; }
+    .card-body { padding: 15px; }
+    .tag { background: rgba(225, 29, 72, 0.1); color: var(--primary); padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase; }
+    
+    /* Botão Flutuante + */
+    .fab { position: fixed; bottom: 40px; right: 40px; width: 65px; height: 65px; background: var(--primary); color: white; border-radius: 50%; font-size: 32px; border: none; cursor: pointer; box-shadow: 0 5px 15px rgba(225, 29, 72, 0.4); z-index: 100; transition: 0.2s; display: grid; place-items: center; }
+    .fab:hover { transform: scale(1.1); }
+
+    /* Formulários */
+    .form-box { background: var(--surface); padding: 30px; border-radius: 12px; border: 1px solid var(--border); max-width: 600px; margin: 0 auto; }
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; margin-bottom: 8px; font-weight: bold; color: var(--text-muted); }
+    .form-input { width: 100%; padding: 12px; background: var(--bg); border: 1px solid var(--border); color: white; border-radius: 6px; font-size: 16px; }
+    .form-input:focus { outline: none; border-color: var(--primary); }
+    textarea.form-input { height: 150px; resize: vertical; }
+
+    /* Tela da Obra */
+    .work-header { display: flex; gap: 30px; margin-bottom: 40px; background: var(--surface); padding: 30px; border-radius: 12px; border: 1px solid var(--border); }
+    .work-cover { width: 200px; height: 300px; background: #27272a; border-radius: 8px; flex-shrink: 0; overflow: hidden; position: relative; }
+    .work-cover img { width: 100%; height: 100%; object-fit: cover; }
+    .work-info h1 { font-size: 36px; margin-bottom: 10px; }
+    .like-btn { background: transparent; border: 1px solid var(--primary); color: var(--primary); padding: 8px 16px; border-radius: 20px; cursor: pointer; margin-top: 15px; font-weight: bold; transition: 0.2s; }
+    .like-btn:hover { background: rgba(225, 29, 72, 0.1); }
+    
+    /* Capítulos */
+    .chapter-list { background: var(--surface); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; }
+    .chapter-item { padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.2s; }
+    .chapter-item:last-child { border-bottom: none; }
+    .chapter-item:hover { background: var(--surface-hover); color: var(--primary); }
+
+    /* Leitor */
+    .reader { max-width: 800px; margin: 0 auto; }
+    .reader-content { font-size: 18px; line-height: 1.8; white-space: pre-wrap; margin: 30px 0; color: #d4d4d8; }
+    
+    /* Mensagem de Erro Auth */
+    .auth-msg { color: var(--primary); margin-top: 15px; font-size: 14px; display: none; font-weight: bold; text-align: center; background: rgba(225, 29, 72, 0.1); padding: 10px; border-radius: 6px; }
+</style>
+</head>
+<body>
+
+<header>
+    <div class="logo" onclick="nav('home')">Chronos</div>
+    <div class="auth-area" id="auth-area">
+        </div>
+</header>
+
+<main>
+    <button class="fab" onclick="checkAuthAndCreate()">+</button>
+
+    <div id="view-home" class="view active">
+        <h2 style="margin-bottom: 20px;">Catálogo</h2>
+        <div id="empty-state" class="empty-state">
+            <h2>Nenhuma história encontrada.</h2>
+            <p>O catálogo está vazio. Seja o primeiro autor a publicar uma obra!</p>
+        </div>
+        <div id="grid-stories" class="grid"></div>
+    </div>
+
+    <div id="view-auth" class="view">
+        <button class="btn-outline" style="margin-bottom: 20px;" onclick="nav('home')">← Voltar</button>
+        <div class="form-box">
+            <h2 style="margin-bottom: 20px; text-align: center;">Identificação de Autor</h2>
+            <div class="form-group">
+                <label>Nome de Autor</label>
+                <input type="text" id="auth-username" class="form-input" placeholder="Digite seu nome...">
+            </div>
+            <div class="form-group">
+                <label>Senha</label>
+                <input type="password" id="auth-password" class="form-input" placeholder="Sua senha de acesso...">
+            </div>
+            <div style="display: flex; gap: 15px; margin-top: 10px;">
+                <button class="btn" style="flex: 1;" onclick="processLogin()">Entrar</button>
+                <button class="btn-outline" style="flex: 1;" onclick="processRegister()">Criar Conta</button>
+            </div>
+            <div id="auth-error" class="auth-msg"></div>
+        </div>
+    </div>
+
+    <div id="view-create" class="view">
+        <button class="btn-outline" style="margin-bottom: 20px;" onclick="nav('home')">← Voltar</button>
+        <div class="form-box">
+            <h2 style="margin-bottom: 20px;">Fundar Nova História</h2>
+            <div class="form-group">
+                <label>Título da Obra</label>
+                <input type="text" id="inp-title" class="form-input" placeholder="O nome da sua lenda...">
+            </div>
+            <div class="form-group">
+                <label>Gênero Literário</label>
+                <select id="inp-genre" class="form-input">
+                    <option value="Shonen">Shonen / Ação</option>
+                    <option value="Romance">Romance</option>
+                    <option value="Ficção Científica">Ficção Científica</option>
+                    <option value="Fantasia">Fantasia Escura</option>
+                    <option value="Mistério">Mistério / Suspense</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>URL da Capa (Opcional - Cole um link de imagem)</label>
+                <input type="text" id="inp-cover" class="form-input" placeholder="https://exemplo.com/imagem.jpg">
+            </div>
+            <div class="form-group">
+                <label>Sinopse / Descrição</label>
+                <textarea id="inp-desc" class="form-input" placeholder="Sobre o que é o seu universo?"></textarea>
+            </div>
+            <button class="btn" style="width: 100%;" onclick="saveStory()">Criar História</button>
+        </div>
+    </div>
+
+    <div id="view-work" class="view">
+        <button class="btn-outline" style="margin-bottom: 20px;" onclick="nav('home')">← Voltar à Home</button>
+        <div id="work-content"></div>
+    </div>
+
+    <div id="view-add-chapter" class="view">
+        <button class="btn-outline" style="margin-bottom: 20px;" onclick="nav('work')">← Cancelar</button>
+        <div class="form-box">
+            <h2 style="margin-bottom: 20px; color: var(--primary);">Novo Capítulo</h2>
+            <div class="form-group">
+                <label>Título do Capítulo</label>
+                <input type="text" id="inp-chap-title" class="form-input" placeholder="Ex: Capítulo 1 - O Início">
+            </div>
+            <div class="form-group">
+                <label>História Completa (Roteiro)</label>
+                <textarea id="inp-chap-text" class="form-input" style="height: 300px;" placeholder="Escreva seu capítulo aqui..."></textarea>
+            </div>
+            <button class="btn" style="width: 100%;" onclick="saveChapter()">Publicar Capítulo</button>
+        </div>
+    </div>
+
+    <div id="view-reader" class="view">
+        <div class="reader">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 15px;">
+                <button class="btn-outline" onclick="nav('work')">← Voltar</button>
+                <h3 id="reader-title">Título</h3>
+            </div>
+            <div id="reader-content" class="reader-content"></div>
+        </div>
+    </div>
+
+</main>
+
+<script>
+// Bancos de Dados Locais
+if(!localStorage.getItem('chronos_db')) localStorage.setItem('chronos_db', JSON.stringify([]));
+if(!localStorage.getItem('chronos_users')) localStorage.setItem('chronos_users', JSON.stringify({})); // Banco de contas
+
+let db = JSON.parse(localStorage.getItem('chronos_db'));
+let usersDb = JSON.parse(localStorage.getItem('chronos_users'));
+let currentUser = localStorage.getItem('chronos_user');
+let currentStoryId = null;
+
+// Sistema de Login UI
+function updateAuthUI() {
+    const authArea = document.getElementById('auth-area');
+    if(currentUser) {
+        authArea.innerHTML = `
+            <span style="color: var(--text-muted); font-weight: bold;">👤 ${currentUser}</span>
+            <button class="btn-outline" style="padding: 6px 12px; font-size: 12px;" onclick="logout()">Sair</button>
+        `;
+    } else {
+        authArea.innerHTML = `<button class="btn" onclick="nav('auth')">Entrar / Login</button>`;
+    }
+}
+
+function logout() {
+    currentUser = null;
+    localStorage.removeItem('chronos_user');
+    updateAuthUI();
+    renderHome();
+    nav('home');
+}
+
+// Lógica de Registro e Login com Senha
+function showAuthError(msg) {
+    const errorBox = document.getElementById('auth-error');
+    errorBox.innerText = msg;
+    errorBox.style.display = 'block';
+}
+
+function processLogin() {
+    const user = document.getElementById('auth-username').value.trim();
+    const pass = document.getElementById('auth-password').value.trim();
+    
+    if(!user || !pass) return showAuthError("Por favor, preencha nome e senha.");
+    
+    if(usersDb[user]) {
+        if(usersDb[user] === pass) {
+            executeLogin(user);
+        } else {
+            showAuthError("❌ Senha incorreta!");
+        }
+    } else {
+        showAuthError("Usuário não encontrado. Se for novo, clique em 'Criar Conta'.");
+    }
+}
+
+function processRegister() {
+    const user = document.getElementById('auth-username').value.trim();
+    const pass = document.getElementById('auth-password').value.trim();
+    
+    if(!user || !pass) return showAuthError("Por favor, preencha nome e senha para criar a conta.");
+    
+    if(usersDb[user]) {
+        showAuthError("❌ Este nome de autor já está em uso!");
+    } else {
+        usersDb[user] = pass;
+        localStorage.setItem('chronos_users', JSON.stringify(usersDb));
+        alert("Conta criada com sucesso!");
+        executeLogin(user);
+    }
+}
+
+function executeLogin(username) {
+    currentUser = username;
+    localStorage.setItem('chronos_user', currentUser);
+    
+    document.getElementById('auth-username').value = '';
+    document.getElementById('auth-password').value = '';
+    document.getElementById('auth-error').style.display = 'none';
+    
+    updateAuthUI();
+    renderHome();
+    nav('home');
+}
+
+// Navegação
+function nav(viewId) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById(`view-${viewId}`).classList.add('active');
+    
+    // Limpa erro de auth ao sair da tela
+    if(viewId !== 'auth') {
+        document.getElementById('auth-error').style.display = 'none';
+    }
+    
+    if(viewId === 'home') renderHome();
+}
+
+// Renderizar Home
+function renderHome() {
+    updateAuthUI();
+    const grid = document.getElementById('grid-stories');
+    const empty = document.getElementById('empty-state');
+    grid.innerHTML = '';
+    
+    if(db.length === 0) {
+        grid.style.display = 'none';
+        empty.style.display = 'block';
+    } else {
+        grid.style.display = 'grid';
+        empty.style.display = 'none';
+        
+        db.forEach((story, index) => {
+            let imgHtml = story.cover ? `<img src="${story.cover}">` : '📖';
+            grid.innerHTML += `
+                <div class="card" onclick="openStory(${index})">
+                    <div class="card-img">${imgHtml}</div>
+                    <div class="card-body">
+                        <span class="tag">${story.genre}</span>
+                        <h3 style="margin: 10px 0 5px;">${story.title}</h3>
+                        <p style="font-size: 13px; color: var(--text-muted);">Por ${story.author} • ❤️ ${story.likes}</p>
+                    </div>
+                </div>
+            `;
+        });
+    }
+}
+
+// Botão Flutuante +
+function checkAuthAndCreate() {
+    if(!currentUser) {
+        alert("Você precisa fazer Login antes de criar uma história!");
+        nav('auth');
+    } else {
+        nav('create');
+    }
+}
+
+// Criar Obra
+function saveStory() {
+    const title = document.getElementById('inp-title').value.trim();
+    const genre = document.getElementById('inp-genre').value;
+    const cover = document.getElementById('inp-cover').value.trim();
+    const desc = document.getElementById('inp-desc').value.trim();
+    
+    if(!title) return alert("O título é obrigatório!");
+    
+    db.push({
+        title, genre, cover, desc,
+        author: currentUser,
+        likes: 0,
+        chapters: []
+    });
+    
+    localStorage.setItem('chronos_db', JSON.stringify(db));
+    
+    document.getElementById('inp-title').value = '';
+    document.getElementById('inp-cover').value = '';
+    document.getElementById('inp-desc').value = '';
+    
+    alert("História criada com sucesso!");
+    nav('home');
+}
+
+// Abrir Obra
+function openStory(index) {
+    currentStoryId = index;
+    const story = db[index];
+    const container = document.getElementById('work-content');
+    
+    let imgHtml = story.cover ? `<img src="${story.cover}">` : '';
+    
+    let chaptersHtml = '';
+    if(story.chapters.length === 0) {
+        chaptersHtml = '<p style="padding: 20px; color: var(--text-muted);">Nenhum capítulo lançado ainda.</p>';
+    } else {
+        story.chapters.forEach((chap, cIdx) => {
+            chaptersHtml += `
+                <div class="chapter-item" onclick="readChapter(${cIdx})">
+                    <span>${chap.title}</span>
+                    <span style="font-size: 12px; color: var(--primary); font-weight: bold;">Ler →</span>
+                </div>
+            `;
+        });
+    }
+
+    let addChapterBtnHtml = '';
+    if(currentUser === story.author) {
+        addChapterBtnHtml = `<button class="btn" style="margin-top: 20px; width: 100%;" onclick="nav('add-chapter')">+ Lançar Novo Capítulo</button>`;
+    }
+
+    container.innerHTML = `
+        <div class="work-header">
+            <div class="work-cover">${imgHtml}</div>
+            <div class="work-info">
+                <span class="tag">${story.genre}</span>
+                <h1 style="margin-top:10px;">${story.title}</h1>
+                <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 15px;">Autor(a): ${story.author}</p>
+                <p style="line-height: 1.6;">${story.desc || 'Sem sinopse.'}</p>
+                <button class="like-btn" onclick="likeStory()">❤️ Curtir (${story.likes})</button>
+            </div>
+        </div>
+        
+        <h3>Capítulos Publicados</h3>
+        <div class="chapter-list" style="margin-top: 15px;">
+            ${chaptersHtml}
+        </div>
+        ${addChapterBtnHtml}
+    `;
+    
+    nav('work');
+}
+
+function likeStory() {
+    db[currentStoryId].likes += 1;
+    localStorage.setItem('chronos_db', JSON.stringify(db));
+    openStory(currentStoryId); 
+}
+
+// Publicar Capítulo
+function saveChapter() {
+    const title = document.getElementById('inp-chap-title').value.trim();
+    const text = document.getElementById('inp-chap-text').value.trim();
+    
+    if(!title || !text) return alert("Preencha título e roteiro!");
+    
+    db[currentStoryId].chapters.push({ title, text });
+    localStorage.setItem('chronos_db', JSON.stringify(db));
+    
+    document.getElementById('inp-chap-title').value = '';
+    document.getElementById('inp-chap-text').value = '';
+    
+    alert("Capítulo publicado!");
+    openStory(currentStoryId);
+}
+
+// Ler
+function readChapter(cIdx) {
+    const chap = db[currentStoryId].chapters[cIdx];
+    document.getElementById('reader-title').innerText = chap.title;
+    document.getElementById('reader-content').innerText = chap.text;
+    nav('reader');
+}
+
+renderHome();
+</script>
+</body>
+</html>
